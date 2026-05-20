@@ -151,7 +151,7 @@ final evaluation is truly unbiased.
 ### Question 1 — Write a split function
 
 Write a function `train_val_test_split` that shuffles the DataFrame and returns three
-non-overlapping splits according to provided fractions.
+non-overlapping splits according to provided fractions. The parameters are: `df` the DataFrame, `train_frac` the fraction of rows assigned to the training set, `val_frac` the fraction of rows assigned to the validation set and `seed` the seed for the random number generator.
 
 *Use `df.sample(fraction=1.0, shuffle=True, seed=seed)` to shuffle, then slice with integer indices.*
 ```{python}
@@ -181,7 +181,13 @@ Apply the function and extract the `label` (features) and `code` (target) column
 split as numpy arrays. Encode the string codes to integers with `LabelEncoder` — keep the
 fitted encoder to decode predictions back to NAF codes later.
 
-*Use `LabelEncoder` from `sklearn.preprocessing`. Call `.fit()` on all codes, then `.transform()` on each split. Extract numpy arrays with `.to_numpy()`.*
+*Use `LabelEncoder` from `sklearn.preprocessing` (see [here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html) for the documentation). Call `.fit()` on all codes, then `.transform()` on each split. Extract numpy arrays with `.to_numpy()`.*
+
+::: {.callout-note appearance="simple" collapse="true"}
+## Why do we use LabelEncoder ?
+We use `LabelEncoder` to map the categorical target `y` to integers `0, 1, …, n_classes - 1`, the format expected by scikit-learn classifiers. It should not be used on input features, however: for those, `OrdinalEncoder` or `OneHotEncoder` is preferred, because `LabelEncoder` is designed for a 1D target and does not handle unseen categories at inference time.
+
+:::
 
 ::: {.callout-warning collapse="true"}
 ## Watch out for data leakage
@@ -219,6 +225,8 @@ print(f"Example: '{train['label'][0]}' → {encoder.inverse_transform(y_train[:1
 Neural networks cannot process raw text directly — they work with numbers. A **tokenizer**
 is the component that bridges this gap: it splits a text into small units called **tokens**
 (words, subwords, or characters) and maps each token to a unique integer ID.
+
+For more details on tokenaziser, you can see the documentation [here](https://inseefrlab.github.io/torchTextClassifiers/architecture/overview.html#component-1-tokenizer)
 
 For example, the sentence *"I sell croissants and pains au chocolat"* might be split into tokens
 `["i", "sell'", "croissants", "and", "pains", "au", "chocolat"]` and encoded as `[326, 40, 199, 126, 20, 755, 1024]`.
@@ -277,16 +285,16 @@ print("Vocabulary size:", tokenizer.vocab_size)
 
 A text classification model in `torchTextClassifiers` is built from three components:
 
-1. **TextEmbedder**: converts token IDs into dense vectors (*embeddings*) of size `embedding_dim`.
+1. [**TextEmbedder**](https://inseefrlab.github.io/torchTextClassifiers/architecture/overview.html#component-2-text-embedding-pipeline-tokenembedder-sentenceembedder): converts token IDs into dense vectors (*embeddings*) of size `embedding_dim`.
    A self-attention layer can be added to capture word order and context.
 
-2. **CategoricalVariableNet** *(optional)*: encodes additional categorical features and merges
+2. [**CategoricalVariableNet**](https://inseefrlab.github.io/torchTextClassifiers/architecture/overview.html#component-3-categorical-variable-handler) *(optional)*: encodes additional categorical features and merges
    them with the text representation. Not used in this dataset.
 
-3. **ClassificationHead**: projects the final representation onto `num_classes` dimensions.
+3. [**ClassificationHead**](https://inseefrlab.github.io/torchTextClassifiers/architecture/overview.html#component-4-classification-head): projects the final representation onto `num_classes` dimensions.
    The highest value determines the predicted class.
 
-These are configured through `ModelConfig` and assembled automatically by `torchTextClassifiers`.
+These are configured through `ModelConfig` and assembled automatically by `torchTextClassifiers`. You can see some `ModelConfig` examples [here](https://inseefrlab.github.io/torchTextClassifiers/architecture/overview.html#usage-examples) and for `torchTextClassifiers` [here](https://inseefrlab.github.io/torchTextClassifiers/api/wrapper.html)
 
 # Training
 
@@ -354,6 +362,8 @@ Define a `TrainingConfig` and train on a small subsample so it completes quickly
 
 *Create a `TrainingConfig(lr=..., batch_size=..., num_epochs=..., num_workers=...)` and call `ttc.train(X_train=..., y_train=..., X_val=..., y_val=..., training_config=..., verbose=True)`.*
 
+You can see the `TrainingConfig` documentation [here](https://inseefrlab.github.io/torchTextClassifiers/api/configs.html#trainingconfig)
+
 ::: {.callout-note appearance="simple" collapse="true"}
 ## Note
 We train on a **small subsample** (5% of the data, 1 epoch) just to verify the pipeline runs
@@ -402,6 +412,8 @@ ttc.train(
 ### Question 3 — Load the pretrained model from MLflow
 
 Load the **pretrained model** trained on the full dataset from MLflow.
+
+You can see the documentation on MLFlow Python API [here](https://mlflow.org/docs/latest/api_reference/python_api/index.html)
 
 *Use `mlflow.set_tracking_uri()` then `mlflow.artifacts.download_artifacts(f"runs:/{RUN_ID}/model_artifacts")`. Rebuild the model from `model_config.json` and restore weights with `load_state_dict()`.*
 
