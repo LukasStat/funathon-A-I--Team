@@ -66,4 +66,9 @@ encoder = LabelEncoder()
 encoder.fit(train_df['code'].to_numpy())
 
 # %%
+import numpy as np
+n_unique = len(np.unique(y_train))
+print(n_unique)
+
+
 
