@@ -1,36 +1,46 @@
+# %%
+import os
+print(os.getcwd())
+os.chdir("/home/onyxia/work/funathon-A-I--Team")
+load_dotenv(override=True)
 #%%
 import mlflow
 from dotenv import load_dotenv
-
 load_dotenv(override=True)
 
-# %%
+#%%
 import polars as pl
-# %%
+
 df = pl.read_parquet("https://minio.lab.sspcloud.fr/projet-formation/diffusion/funathon/2026/project2/generation_None_temp08.parquet")
 
-print(df.head())
-print(f"Total rows: {len(df)}")
 # %%
-print(df)
+print(df.head())
+n_classes =(f"Total rows: {len(df)}")
+# %%
+n_classes = len(df)
+n_classes
+n_classes = df['code'].n_unique()
+# %%
+df['name']
+# %%
+df
+
+# %%
+import polars
 # %%
 n_classes = df['code'].n_unique()
-print(f"Number of unique NACE codes: {n_classes}")
+n_classes
 # %%
-df.shape[1]
-# %%
-df.head()
-# %%
+n_names= df['name'].n_unique()
+#n_labes = df['labels'].n_unique()
+#n_labels
+
+#%%
 print(df)
-# %%
-from sklearn.model_selection import train_test_split 
+#%%
+from sklearn.model_selection import train_test_split
 
-
-#%% 
-import numpy as np
-
-# %%
-train_df, tmp_df = train_test_split(df, test_size=0.30, random_state=42, stratify=df["code"])
+train_df, tmp_df = train_test_split(df, test_size=0.30, random_state=42)
 val_df, test_df  = train_test_split(tmp_df, test_size=0.50, random_state=42)
 
 X_train, y_train = train_df["label"].to_numpy(), train_df["code"].to_numpy()
@@ -38,13 +48,20 @@ X_val, y_val = val_df["label"].to_numpy(), val_df["code"].to_numpy()
 X_test, y_test = test_df["label"].to_numpy(), test_df["code"].to_numpy()
 
 print(f"Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
+# %%
+y_val
+# %%
+# %%
+
+print(test_df.shape)
+print(X_test.shape)
+print(y_test.shape)
+print(X_train.shape)
 
 # %%
-n_unique = len(np.unique(y_train))
-print(n_unique)
 
-
-# %%
+len(y_val)/(len(y_val)+len(y_test))
+#%%
 from sklearn.preprocessing import LabelEncoder
 
 encoder = LabelEncoder()
@@ -59,28 +76,19 @@ if missing:
 else:
     print(f"OK — all {len(all_codes)} codes appear in the training set.")
 # %%
-from torchTextClassifiers.value_encoder import ValueEncoder
+train_codes
+# %%
+len(train_codes)
+#%%
+import sys
+print("Python:", sys.executable)
+print("Path:", sys.path)
+
+!pip show torchTextClassifiers
+#%%
+from torchtextclassifiers.value_encoder import ValueEncoder
 value_encoder = ValueEncoder(label_encoder=encoder)
 
 
+
 # %%
-from torchTextClassifiers.tokenizers import WordPieceTokenizer
-
-tokenizer = WordPieceTokenizer(vocab_size=5000, output_dim=10)
-tokenizer.train(X_train)
-
-print("Output tensor size:", tokenizer.tokenize(X_train[0]).input_ids.shape)
-print("Vocabulary size:", tokenizer.vocab_size)
-
-# Look at an example of tokenization
-print("Raw text", X_train[0])
-print(
-    "Tokens id:",
-    tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
-)
-print(
-    "Tokens:",
-    tokenizer.tokenizer.convert_ids_to_tokens(
-        tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
-    )
-)
