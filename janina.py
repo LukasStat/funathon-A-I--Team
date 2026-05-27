@@ -30,7 +30,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 
 # %%
-train_df, tmp_df = train_test_split(df, test_size=0.30, random_state=42)
+train_df, tmp_df = train_test_split(df, test_size=0.30, random_state=42, stratify=df["code"])
 val_df, test_df  = train_test_split(tmp_df, test_size=0.50, random_state=42)
 
 X_train, y_train = train_df["label"].to_numpy(), train_df["code"].to_numpy()
@@ -59,3 +59,28 @@ if missing:
 else:
     print(f"OK — all {len(all_codes)} codes appear in the training set.")
 # %%
+from torchTextClassifiers.value_encoder import ValueEncoder
+value_encoder = ValueEncoder(label_encoder=encoder)
+
+
+# %%
+from torchTextClassifiers.tokenizers import WordPieceTokenizer
+
+tokenizer = WordPieceTokenizer(vocab_size=5000, output_dim=10)
+tokenizer.train(X_train)
+
+print("Output tensor size:", tokenizer.tokenize(X_train[0]).input_ids.shape)
+print("Vocabulary size:", tokenizer.vocab_size)
+
+# Look at an example of tokenization
+print("Raw text", X_train[0])
+print(
+    "Tokens id:",
+    tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
+)
+print(
+    "Tokens:",
+    tokenizer.tokenizer.convert_ids_to_tokens(
+        tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
+    )
+)
