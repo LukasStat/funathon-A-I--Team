@@ -59,3 +59,30 @@ from torchTextClassifiers.value_encoder import ValueEncoder
 # %%
 value_encoder = ValueEncoder(label_encoder=encoder)
 # %%
+from torchTextClassifiers.tokenizers import WordPieceTokenizer
+# %%
+tokenizer = WordPieceTokenizer(vocab_size=5000, output_dim=10)
+# %%
+tokenizer.train(X_train)
+
+
+print("Output tensor size:", tokenizer.tokenize(X_train[0]).input_ids.shape)
+print("Vocabulary size:", tokenizer.vocab_size)
+
+# Look at an example of tokenization
+print("Raw text", X_train[0])
+print(
+    "Tokens id:",
+    tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
+)
+print(
+    "Tokens:",
+    tokenizer.tokenizer.convert_ids_to_tokens(
+        tokenizer.tokenize(X_train[0]).input_ids.squeeze(0)
+    )
+)
+# %%
+dir(tokenizer)
+
+# %%
+tokenizer.
