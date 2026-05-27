@@ -21,7 +21,6 @@ load_dotenv(override=True)
 
 
 # %%
-
 import polars
 
 df = polars.read_parquet(
@@ -58,7 +57,7 @@ X_val, y_val = val_df["label"].to_numpy(), val_df["code"].to_numpy()
 X_test, y_test = test_df["label"].to_numpy(), test_df["code"].to_numpy()
 
 print(f"Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
-# %%
+
 
 # %%
 from sklearn.preprocessing import LabelEncoder
@@ -66,9 +65,25 @@ encoder = LabelEncoder()
 encoder.fit(train_df['code'].to_numpy())
 
 # %%
-import numpy as np
-n_unique = len(np.unique(y_train))
-print(n_unique)
+all_codes  = set(df['code'])
+train_codes = set(train_df['code'])
+missing = all_codes - train_codes
 
+if missing:
+    print(f"WARNING: {len(missing)} code(s) missing from training set: {missing}")
+else:
+    print(f"OK — all {len(all_codes)} codes appear in the training set.")
 
+# %%
+from torchTextClassifiers.value_encoder import ValueEncoder
+value_encoder = ValueEncoder(label_encoder=encoder)
 
+# %%
+from torchTextClassifiers.tokenizers import WordPieceTokenizer
+
+tokenizer = WordPieceTokenizer(vocab_size=5000, output_dim=10)
+tokenizer.train(X_train)
+
+print("Output tensor size:", tokenizer.tokenize(X_train[0]).input_ids.shape)
+print("Vocabulary size:", tokenizer.vocab_size)
+# %%
