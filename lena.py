@@ -116,13 +116,76 @@ training_config = TrainingConfig(
 
 
 # tracking experiment in mlflow
-mlflow.set_experiment("my-experiment")
+mlflow.set_experiment("funathon-2026-project2")
 mlflow.pytorch.autolog()
 
-with mlflow.start_run():
-ttc.train(X_train=X_train, y_train=y_train, X_val=X_val, y_val=y_val, training_config=training_config, verbose=True)
+with mlflow.start_run() as run:
+    # This should take approximately 1-2mn
+    ttc.train(
+        X_train,
+        y_train,
+        training_config=training_config,
+        X_val=X_val,
+        y_val=y_val,
+        verbose=True,
+    )
 
     mlflow.log_artifacts(
         training_config.save_path,   # local folder produced by ttc.train()
         artifact_path="model_artifacts",
     )
+    
+    
+#| label: load-from-run
+#| code-overflow: scroll
+#| output: true
+local_dir = mlflow.artifacts.download_artifacts(
+    f"runs:/{run.info.run_id}/model_artifacts"
+)
+
+# Rebuild the torchTextClassifiers object from the downloaded files
+ttc_loaded = torchTextClassifiers.load(local_dir)
+
+print(ttc_loaded)
+
+my_model = ttc_loaded
+
+#  Load the pretrained model from MLflow
+import s3fs
+
+fs = s3fs.S3FileSystem(
+    anon=True,  # public bucket
+    endpoint_url="https://minio.lab.sspcloud.fr",
+)
+
+local_dir = "./mlflow-artifacts/"
+fs.get(
+    "projet-funathon/diffusion/mlflow-artifacts/",
+    local_dir,
+    recursive=True,
+)
+# Rebuild the torchTextClassifiers object from the downloaded files
+ttc = torchTextClassifiers.load(local_dir)
+
+ttc.pytorch_model.eval()
+
+# Generate top-5 predictions with confidence scores
+import random
+
+random_indices = random.sample(range(len(X_test)), 3)
+example_texts = X_test[random_indices]
+example_true_codes = y_test[random_indices]
+print(example_texts)
+top_k = 5
+
+
+# explain_with_captum=True: also computes explanations (feature/token importance)
+# results is a dictionary containing things like:
+# # prediction: predicted labels
+# confidence: probabilities
+# captum_attributions: explanations
+results = ttc.predict(example_texts, top_k=top_k, explain_with_captum=True)
+
+my_results = my_model.predict(example_texts, top_k=top_k, explain_with_captum=True)
+
+
