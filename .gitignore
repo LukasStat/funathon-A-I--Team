@@ -222,3 +222,4 @@ __marimo__/
 lightning_logs/
 my_ttc/
 scratch.py
+mlflow-artifacts/
