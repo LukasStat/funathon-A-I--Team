@@ -234,3 +234,26 @@ results_test = ttc.predict(X_test, top_k=1)
 preds    = results_test["prediction"].squeeze(1)
 accuracy = (preds == y_test).mean()
 print(f"Test accuracy: {accuracy:.4f} ({int(accuracy * len(y_test))}/{len(y_test)} correct)")
+
+
+# %%
+#auf erste 100 zeilen anwenden und als csv ablegen; theoretisch
+
+import pandas as pd
+
+# Vorhersagen auf ersten 100
+results = ttc_mein.predict(X_test[:100], top_k=1)
+
+# DataFrame erstellen
+df_results = pd.DataFrame({
+    "text": X_test[:100],
+    "true_code": y_test[:100],
+    "predicted_code": [results["prediction"][i][0] for i in range(100)],
+    "confidence": [results["confidence"][i][0].item() for i in range(100)],
+})
+pd.set_option("display.max_rows", 100)
+df_results
+pd.reset_option("display.max_rows")
+# CSV speichern
+#df_results.to_csv("vorhersagen.csv", index=False)
+# %%
