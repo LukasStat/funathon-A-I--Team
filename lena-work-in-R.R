@@ -50,5 +50,25 @@ split2 <- initial_split(tmp_df, prop = 0.5)
 val_df  <- training(split2)
 test_df <- testing(split2)
 
+
+X_train <- as.matrix(train_df$label)
+y_train <- train_df$code
+
+X_val <- as.matrix(val_df$label)
+y_val <- val_df$code
+
+X_test <- as.matrix(test_df$label)
+y_test <- test_df$cod
+
+
 # target = code
 # feature = freitext
+
+# 3.2 Question 2 — Encode the labels
+
+
+encoder_levels <- sort(unique(train_df$code))
+
+# Mapping auf Integer (1, 2, ..., n_classes)
+y_train <- as.integer(factor(train_df$code, levels = encoder_levels))
+
