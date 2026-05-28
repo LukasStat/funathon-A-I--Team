@@ -181,7 +181,14 @@ __marimo__/
 lightning_logs/
 my_ttc/
 scratch.py
+<<<<<<< HEAD
+ 
+.Rproj.user
+.positai
+mlflow-artifacts/
+=======
 
 .Rproj.user
 .positai
 mlflow-artifacts/
+>>>>>>> 041bda050ca333130097482555d5ec414297d476

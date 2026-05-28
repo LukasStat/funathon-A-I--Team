@@ -123,3 +123,102 @@ training_config = TrainingConfig(
     patience_early_stopping=5,
 )
 
+# ML Flow um das Trainingexperiment zu tracken
+mlflow.set_experiment("my-experiment")
+mlflow.pytorch.autolog()
+
+with mlflow.start_run():
+  ttc.train(X_train=X_train, y_train=y_train, X_val=X_val, y_val=y_val, training_config=training_config, verbose=True)
+
+
+mlflow.set_experiment("funathon-2026-project2")
+mlflow.pytorch.autolog()
+
+with mlflow.start_run() as run:
+    # This should take approximately 1-2mn
+    ttc.train(
+        X_train,
+        y_train,
+        training_config=training_config,
+        X_val=X_val,
+        y_val=y_val,
+        verbose=True,
+    )
+
+    mlflow.log_artifacts(
+        training_config.save_path,   # local folder produced by ttc.train()
+        artifact_path="model_artifacts",
+    )
+    
+ 
+#| label: load-from-run
+#| code-overflow: scroll
+#| output: true
+local_dir = mlflow.artifacts.download_artifacts(
+    f"runs:/{run.info.run_id}/model_artifacts"
+)
+
+# Rebuild the torchTextClassifiers object from the downloaded files
+ttc_loaded = torchTextClassifiers.load(local_dir)
+
+my_model = ttc_loaded
+print(my_model) 
+
+#######################################################
+ 
+
+# Pretrained Modell laden (besser trainiert, mit mehr epochen...)
+import s3fs
+
+fs = s3fs.S3FileSystem(
+    anon=True,  # public bucket
+    endpoint_url="https://minio.lab.sspcloud.fr",
+)
+
+local_dir = "./mlflow-artifacts/"
+fs.get(
+    "projet-funathon/diffusion/mlflow-artifacts/",
+    local_dir,
+    recursive=True,
+)
+# Rebuild the torchTextClassifiers object from the downloaded files
+ttc = torchTextClassifiers.load(local_dir)
+
+ttc.pytorch_model.eval()
+
+##########################################################
+# Pretrained Model testen 
+# Random Sample aus Texeinträgen ziehen, um Model zu testen
+import random
+
+random_indices = random.sample(range(len(X_test)), 3)
+example_texts = X_test[random_indices]
+example_true_codes = y_test[random_indices]
+print(example_texts)
+top_k = 5
+results = ttc.predict(example_texts, top_k=top_k, explain_with_captum=True)
+for i, text in enumerate(example_texts):
+    predicted_codes = [results["prediction"][i][k] for k in range(top_k)]
+    confidence = [results["confidence"][i][k].item() for k in range(top_k)]
+    print(f"\nText: {text}")
+    print(f"  True code: {example_true_codes[i]}")
+    for code, conf in zip(predicted_codes, confidence):
+        print(f"  {code}  (confidence: {conf:.3f})")
+
+############################################################
+# Eigenes Modell (my_model) testen
+# Random Sample aus Texeinträgen ziehen, um Model zu testen
+random_indices = random.sample(range(len(X_test)), 3)
+example_texts = X_test[random_indices]
+example_true_codes = y_test[random_indices]
+print(example_texts)
+top_k = 5
+results = my_model.predict(example_texts, top_k=top_k, explain_with_captum=True)
+for i, text in enumerate(example_texts):
+    predicted_codes = [results["prediction"][i][k] for k in range(top_k)]
+    confidence = [results["confidence"][i][k].item() for k in range(top_k)]
+    print(f"\nText: {text}")
+    print(f"  True code: {example_true_codes[i]}")
+    for code, conf in zip(predicted_codes, confidence):
+        print(f"  {code}  (confidence: {conf:.3f})")
+#################################################################
