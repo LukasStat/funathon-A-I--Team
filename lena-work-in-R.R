@@ -15,3 +15,5 @@ py_run_string("
 import os
 print(os.getenv('MLFLOW_TRACKING_URI'))
 ")
+
+# test
