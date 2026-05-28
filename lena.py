@@ -189,3 +189,74 @@ results = ttc.predict(example_texts, top_k=top_k, explain_with_captum=True)
 my_results = my_model.predict(example_texts, top_k=top_k, explain_with_captum=True)
 
 
+for i, text in enumerate(example_texts):
+    predicted_codes = [results["prediction"][i][k] for k in range(top_k)]
+    confidence = [results["confidence"][i][k].item() for k in range(top_k)]
+    print(f"\nText: {text}")
+    print(f"  True code: {example_true_codes[i]}")
+    for code, conf in zip(predicted_codes, confidence):
+        print(f"  {code}  (confidence: {conf:.3f})")
+        
+        
+        
+results = my_model.predict(X_test[:100])  # nur erste 100
+
+results["prediction"]  # vorhergesagte NACE-Codes für jeden Text
+results["confidence"]  # wie sicher das Modell war
+
+for i in range(30):
+    print(f"Text:       {X_test[i]}")
+    print(f"Vorhergesagt: {results['prediction'][i][0]}")
+    print(f"Wirklich:     {y_test[i]}")
+    print()
+
+# 7.3 Question 2
+
+from torchTextClassifiers.utilities.plot_explainability import (
+    map_attributions_to_char, map_attributions_to_word,
+    plot_attributions_at_char, plot_attributions_at_word, figshow,
+)
+
+text_idx = 3
+top_k_idx = 3
+text_sample         = example_texts[text_idx]
+offsets             = results["offset_mapping"][text_idx]
+word_ids            = results["word_ids"][text_idx]
+predicted_code = results["prediction"][text_idx][top_k_idx]
+
+attributions  = results["captum_attributions"][text_idx][top_k_idx] # (seq_len,)
+
+words, word_attributions = map_attributions_to_word(
+    attributions.unsqueeze(0), text_sample, word_ids, offsets
+)
+char_attributions = map_attributions_to_char(attributions.unsqueeze(0), offsets, text_sample)
+
+titles = [f"Attributions for NACE code {predicted_code}"]
+
+figshow(plot_attributions_at_char(
+    text=text_sample, attributions_per_char=char_attributions, titles=titles,
+)[0])
+
+figshow(plot_attributions_at_word(
+    text=text_sample, words=words.values(), attributions_per_word=word_attributions, titles=titles,
+)[0])
+
+
+
+
+# 7.4
+
+ttc.predict(X_test, top_k=1)
+
+ttc.predict(y_test, top_k=1)
+
+results_test = ttc.predict(X_test, top_k=1)
+preds    = results_test["prediction"].squeeze(1)
+accuracy = (preds == y_test).mean()
+print(f"Test accuracy: {accuracy:.4f} ({int(accuracy * len(y_test))}/{len(y_test)} correct)")
+
+
+results_test = my_model.predict(X_test, top_k=1)
+preds    = results_test["prediction"].squeeze(1)
+accuracy = (preds == y_test).mean()
+print(f"Test accuracy: {accuracy:.4f} ({int(accuracy * len(y_test))}/{len(y_test)} correct)")
